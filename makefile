@@ -26,6 +26,8 @@ override LDFLAGS       = -Wl,-Map,$(PRG).map
 OBJCOPY        = avr-objcopy
 OBJDUMP        = avr-objdump
 
+.PHONY: all clean program
+
 all: $(PRG).elf lst text #eeprom
 
 $(PRG).elf: $(OBJ)
