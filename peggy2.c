@@ -131,42 +131,24 @@ SIGNAL(SIG_PIN_CHANGE0)
 	}
 }
 
-
-
-
 void delayLong()
 {
 	unsigned int delayvar;
 	delayvar = 0;
-	while (delayvar <= 10U) {
+	while (delayvar <= 10) {
 		asm("nop");
 		delayvar++;
 	}
 }
 
-
-
-
-
 int main(void)
 {
 	asm("cli");		// DISABLE global interrupts
 
-
 	unsigned int j, k;	// General purpose indexing dummy variables
-	unsigned int countup;
 
-	unsigned char a, b, c, d;
-
-	// unsigned long d[26];
-	// unsigned long dtemp;
-
-	unsigned int f[25];
-	unsigned int g[25];
-
-	unsigned int eTemp;
-
-	unsigned short colnum;
+	unsigned long int p0[25];
+	unsigned long int p1[25];
 
 	mode = 0;
 
@@ -184,12 +166,10 @@ int main(void)
 	DDRB = 254U;
 	DDRC = 255U;
 
-	countup = 0;
-
 	////SET MOSI, SCK Output, all other SPI as input:
 	DDRB = (1 << 3) | (1 << 5) | (1 << 2) | (1 << 1);
 
-	//ENABLE SPI, MASTER, CLOCK RATE fck/4:
+	// ENABLE SPI, MASTER, CLOCK RATE fck/4:
 	SPCR = (1 << SPE) | (1 << MSTR);
 
 	SPI_TX(0);
@@ -197,16 +177,15 @@ int main(void)
 	SPI_TX(0);
 	SPI_TX(0);
 
-	PORTB |= _BV(1);	//Latch Pulse
+	PORTB |= _BV(1);	// Latch Pulse
 	PORTB &= ~(_BV(1));
-
-	countup = 0;
 
 	j = 0;
 
 	while (j < 25) {
-		f[j] = 0U;	// Set up initial mode-- all LEDs on.
-		g[j] = 65535U;	// To display something else, *change* f[] and g[]!
+		// Set up initial mode-- all LEDs on.
+		p0[j] = 0x0f0f0f0f;
+		p1[j] = 0x00ff00ff;
 
 		j++;
 	}
@@ -216,35 +195,64 @@ int main(void)
 	asm("sei");		// ENABLE global interrupts
 
 	// main loop
-	for (;;)
-	{
+	for (;;) {
+	// paint a frame
 		// PORTD = 255;
-		j = 0;
+		int field = 0;
 
-		while (j < 25) {
-			a = g[j] >> 8;
-			b = g[j] & 255U;
-			c = f[j] >> 8;
-			d = f[j] & 255U;
+		while (field < 4) {
+			// paint a field
+			j = 0;
 
-			SPI_TX(a);
-			SPI_TX(b);
-			SPI_TX(c);
-			SPI_TX(d);
+			while (j < 25) {
+				// a, b, c, d are contents of the led driver registers.
+				unsigned char a, b, c, d;
 
-			PORTD = 0;	// Turn displays off
+				// paint a row
 
-			PORTB |= _BV(1);	//Latch Pulse
-			PORTB &= ~(_BV(1));
+				/* for grayscale, run fields 0, 1, 2 with planes 0, 1, 1 */
+				switch (field) {
+				case 0:
+					// field 0 = plane 0
+					a = (p0[j] >> 24) & 0xff;
+					b = (p0[j] >> 16) & 0xff;
+					c = (p0[j] >>  8) & 0xff;
+					d = (p0[j] >>  0) & 0xff;
+					break;
 
-			if (j < 15)
-				PORTD = j + 1;
-			else
-				PORTD = (j - 14) << 4;
+				case 1:
+				case 2:
+				case 3:
+					// fields 1, 2 = plane 1
+					a = (p1[j] >> 24) & 0xff;
+					b = (p1[j] >> 16) & 0xff;
+					c = (p1[j] >>  8) & 0xff;
+					d = (p1[j] >>  0) & 0xff;
+					break;
+				}
 
-			delayLong();	// Delay with new data
+				SPI_TX(a);
+				SPI_TX(b);
+				SPI_TX(c);
+				SPI_TX(d);
 
-			j++;
+				PORTD = 0;	// Turn displays off
+
+				PORTB |= _BV(1);	// Latch Pulse
+				PORTB &= ~(_BV(1));
+
+				// paint one row
+				if (j < 15)
+					PORTD = j + 1;
+				else
+					PORTD = (j - 14) << 4;
+
+				j++;
+
+				delayLong();	// Delay with new data
+			}
+
+			field++;
 		}
 	}
 	// End main loop.
