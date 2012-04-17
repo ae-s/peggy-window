@@ -93,6 +93,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+unsigned long int p0[25];
+unsigned long int p1[25];
 
 void SPI_TX(char cData)
 {
@@ -141,14 +143,36 @@ void delayLong()
 	}
 }
 
+void update_frame(void)
+{
+	static int state;
+	static int frame_nr = 0;
+
+	int row, col;
+
+	int i;
+
+	if (frame_nr == 50) {
+		frame_nr = 1;
+		state++;
+	}
+
+	row = rand() % 25;
+	col = rand() % 25;
+	p0[row] ^= (1LU << col);
+
+	row = rand() % 25;
+	col = rand() % 25;
+	p1[row] ^= (1LU << col);
+
+	frame_nr += 1;
+}
+
 int main(void)
 {
 	asm("cli");		// DISABLE global interrupts
 
 	unsigned int j, k;	// General purpose indexing dummy variables
-
-	unsigned long int p0[25];
-	unsigned long int p1[25];
 
 	mode = 0;
 
@@ -177,15 +201,15 @@ int main(void)
 	SPI_TX(0);
 	SPI_TX(0);
 
-	PORTB |= _BV(1);	// Latch Pulse
+	PORTB |= _BV(1);	// Latch pulse
 	PORTB &= ~(_BV(1));
 
 	j = 0;
 
 	while (j < 25) {
 		// Set up initial mode-- all LEDs on.
-		p0[j] = 0x0f0f0f0f;
-		p1[j] = 0x00ff00ff;
+		p0[j] = 0;
+		p1[j] = 0;
 
 		j++;
 	}
@@ -196,15 +220,18 @@ int main(void)
 
 	// main loop
 	for (;;) {
-	// paint a frame
+		// paint a frame
 		// PORTD = 255;
 		int field = 0;
 
+		update_frame();
+
 		while (field < 4) {
 			// paint a field
-			j = 0;
+			int row = 0;
 
-			while (j < 25) {
+
+			while (row < 25) {
 				// a, b, c, d are contents of the led driver registers.
 				unsigned char a, b, c, d;
 
@@ -214,20 +241,20 @@ int main(void)
 				switch (field) {
 				case 0:
 					// field 0 = plane 0
-					a = (p0[j] >> 24) & 0xff;
-					b = (p0[j] >> 16) & 0xff;
-					c = (p0[j] >>  8) & 0xff;
-					d = (p0[j] >>  0) & 0xff;
+					a = (p0[row] >> 24) & 0xff;
+					b = (p0[row] >> 16) & 0xff;
+					c = (p0[row] >>  8) & 0xff;
+					d = (p0[row] >>  0) & 0xff;
 					break;
 
 				case 1:
 				case 2:
 				case 3:
 					// fields 1, 2 = plane 1
-					a = (p1[j] >> 24) & 0xff;
-					b = (p1[j] >> 16) & 0xff;
-					c = (p1[j] >>  8) & 0xff;
-					d = (p1[j] >>  0) & 0xff;
+					a = (p1[row] >> 24) & 0xff;
+					b = (p1[row] >> 16) & 0xff;
+					c = (p1[row] >>  8) & 0xff;
+					d = (p1[row] >>  0) & 0xff;
 					break;
 				}
 
@@ -242,12 +269,12 @@ int main(void)
 				PORTB &= ~(_BV(1));
 
 				// paint one row
-				if (j < 15)
-					PORTD = j + 1;
+				if (row < 15)
+					PORTD = row + 1;
 				else
-					PORTD = (j - 14) << 4;
+					PORTD = (row - 14) << 4;
 
-				j++;
+				row++;
 
 				delayLong();	// Delay with new data
 			}
