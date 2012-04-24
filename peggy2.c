@@ -143,7 +143,7 @@ void delayLong()
 	}
 }
 
-void update_frame(void)
+void snowcrash_frame(void)
 {
 	static int state;
 	static int frame_nr = 0;
@@ -166,6 +166,99 @@ void update_frame(void)
 	p1[row] ^= (1LU << col);
 
 	frame_nr += 1;
+}
+
+void ball_frame(void)
+{
+	static int framecount = 0;
+
+	static int x = 5, y = 5;
+
+	static int dx = 1, dy = 1;
+
+	const char center1 = 0x0f, top1 = 0x06;
+	const char center0 = 0x06, top0 = 0x00;
+	const char mask = 0x0f;
+	const int max = 21;
+
+	framecount++;
+	if (framecount < 10) {
+		delayLong();
+		return;
+	}
+
+	framecount = 0;
+
+	// blank the screen
+//	int i;
+//
+//	for (i = 0; i < 25; i++)
+//		p1[i] = p0[i] = 0;
+
+	// blank the old ball
+	p0[y+0] &= ~((long int)mask << x);
+	p0[y+1] &= ~((long int)mask << x);
+	p0[y+2] &= ~((long int)mask << x);
+	p0[y+3] &= ~((long int)mask << x);
+
+	p1[y+0] &= ~((long int)mask << x);
+	p1[y+1] &= ~((long int)mask << x);
+	p1[y+2] &= ~((long int)mask << x);
+	p1[y+3] &= ~((long int)mask << x);
+
+	// bounce off the walls
+	if ((x >= max) || (x <= 0)) {
+		signed char dir = dx<0 ? 1 : -1;
+
+		dx = ((rand() % 2) + 1) * dir;
+	}
+
+	if ((y >= max) || (y <= 0)) {
+		signed char dir = dy<0 ? 1 : -1;
+
+		dy = ((rand() % 2) + 1) * dir;
+	}
+
+	// move the ball
+	y += dy;
+	x += dx;
+	if (y > max) y = max;
+	if (x > max) x = max;
+
+	// draw the ball
+	p0[y+0] |= ((long int)top0 << x);
+	p0[y+1] |= ((long int)center0 << x);
+	p0[y+2] |= ((long int)center0 << x);
+	p0[y+3] |= ((long int)top0 << x);
+
+	p1[y+0] |= ((long int)top1 << x);
+	p1[y+1] |= ((long int)center1 << x);
+	p1[y+2] |= ((long int)center1 << x);
+	p1[y+3] |= ((long int)top1 << x);
+
+}
+
+void update_frame(void)
+{
+	static int frame_nr;
+	static int mode = 0;
+
+	if (frame_nr++ > 1000) {
+		mode++;
+		frame_nr = 0;
+	}
+
+	switch (mode) {
+	case 0:
+		ball_frame();
+		break;
+	case 1:
+		snowcrash_frame();
+		break;
+	default:
+		mode = 0;
+		break;
+	}
 }
 
 int main(void)
