@@ -214,6 +214,8 @@ void ball_frame(void)
 	x += dx;
 	if (y > max) y = max;
 	if (x > max) x = max;
+	if (y < 0) y = 0;
+	if (x < 0) x = 0;
 
 	// draw the ball
 	p0[y+0] |= ((long int)top0 << x);
