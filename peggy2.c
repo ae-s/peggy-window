@@ -230,6 +230,9 @@ void ball_frame(void)
 
 }
 
+// use stopat to advance the animation to the next mode at the given frame count
+#define stopat(x) if (frame_nr > x) {mode++; frame_nr = 0;}
+
 void update_frame(void)
 {
 	static int frame_nr;
@@ -243,15 +246,18 @@ void update_frame(void)
 	switch (mode) {
 	case 0:
 		ball_frame();
+		stopat(5000);
 		break;
 	case 1:
 		snowcrash_frame();
+		stopat(1000);
 		break;
 	default:
 		mode = 0;
 		break;
 	}
 }
+#undef stopat(x)
 
 int main(void)
 {
