@@ -145,17 +145,9 @@ void delayLong()
 
 void snowcrash_frame(void)
 {
-	static int state;
-	static int frame_nr = 0;
-
 	int row, col;
 
 	int i;
-
-	if (frame_nr == 50) {
-		frame_nr = 1;
-		state++;
-	}
 
 	row = rand() % 25;
 	col = rand() % 25;
@@ -164,8 +156,6 @@ void snowcrash_frame(void)
 	row = rand() % 25;
 	col = rand() % 25;
 	p1[row] ^= (1LU << col);
-
-	frame_nr += 1;
 }
 
 void ball_frame(void)
