@@ -236,10 +236,7 @@ void update_frame(void)
 	static int frame_nr;
 	static int mode = 0;
 
-	if (frame_nr++ > 1000) {
-		mode++;
-		frame_nr = 0;
-	}
+	frame_nr++;
 
 	switch (mode) {
 	case 0:
