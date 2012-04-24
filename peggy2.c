@@ -160,7 +160,7 @@ void snowcrash_frame(void)
 
 void ball_frame(void)
 {
-	static int framecount = 0;
+	static int frame_nr = 0;
 
 	static int x = 5, y = 5;
 
@@ -171,13 +171,11 @@ void ball_frame(void)
 	const char mask = 0x0f;
 	const int max = 21;
 
-	framecount++;
-	if (framecount < 10) {
-		delayLong();
+	frame_nr++;
+	if (frame_nr < 10)
 		return;
-	}
 
-	framecount = 0;
+	frame_nr = 0;
 
 	// blank the screen
 //	int i;
