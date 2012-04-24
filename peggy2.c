@@ -225,7 +225,22 @@ void ball_frame(void)
 	p1[y+1] |= ((long int)center1 << x);
 	p1[y+2] |= ((long int)center1 << x);
 	p1[y+3] |= ((long int)top1 << x);
+}
 
+void decay_frame(void)
+{
+	int row;
+	int dir;
+
+	row = rand() % 25;
+	dir = row % 2;
+	if (dir == 1) {
+		p0[row] <<= 1;
+		p1[row] <<= 1;
+	} else {
+		p0[row] >>= 1;
+		p1[row] >>= 1;
+	}
 }
 
 // use stopat to advance the animation to the next mode at the given frame count
@@ -245,6 +260,10 @@ void update_frame(void)
 		break;
 	case 1:
 		snowcrash_frame();
+		stopat(1000);
+		break;
+	case 2:
+		decay_frame();
 		stopat(1000);
 		break;
 	default:
